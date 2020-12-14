@@ -40,3 +40,18 @@ void Knapsack::Rotate(int index, Item& item)
 	weight += inventory[index].weight;
 	value += inventory[index].value;
 }
+
+void Knapsack::Print()
+{
+	std::cout << "Printing knapsack...\n";
+	std::cout << "Weight: " << this->weight << std::endl;
+	std::cout << "Maxweight: " << this->maxWeight << std::endl;
+	std::cout << "Value: " << this->value << std::endl;
+
+
+	for (int i = 0; i < inventory.size(); i++)
+	{
+		std::cout << "Item " << i << " p" << inventory[i].value << " w" << inventory[i].weight << std::endl;
+	}
+	std::cout << std::endl;
+}

@@ -85,6 +85,18 @@ float Evaluate(std::vector<Knapsack>& knapsacks)
     return result;
 }
 
+bool Valid(std::vector<Knapsack>& knapsacks)
+{
+    for (int i = 0; i < knapsacks.size(); i++)
+    {
+        if (knapsacks[i].weight > knapsacks[i].maxWeight)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 float Value(std::vector<Knapsack>& knapsacks)
 {
     float result = 0;
@@ -95,8 +107,9 @@ float Value(std::vector<Knapsack>& knapsacks)
     return result;
 }
 
-void UpdateKnapsacks(std::vector<Knapsack>& knapsacks)
+void UpdateKnapsacks(Knapsack& floor, std::vector<Knapsack>& knapsacks)
 {
+    floor.Update();
     for (int i = 0; i < knapsacks.size(); i++)
     {
         knapsacks[i].Update();
@@ -132,8 +145,8 @@ bool NeighbourhoodOrganize(Knapsack& floor, std::vector<Knapsack>& knapsacks, in
             for (int k = 0; k < knapsacks[j].inventory.size(); k++)
             {
                 knapsacks[currentKnapsack].Rotate(i, knapsacks[j].inventory[k]);
-                UpdateKnapsacks(knapsacks);
-                if (Evaluate(knapsacks) > currentEval)
+                UpdateKnapsacks(floor, knapsacks);
+                if (Evaluate(knapsacks) > currentEval && Valid(knapsacks))
                 {
                     localMax = false;
                     currentEval = Evaluate(knapsacks);
@@ -142,7 +155,7 @@ bool NeighbourhoodOrganize(Knapsack& floor, std::vector<Knapsack>& knapsacks, in
                     bestK = k;
                 }
                 knapsacks[currentKnapsack].Rotate(i, knapsacks[j].inventory[k]);
-                UpdateKnapsacks(knapsacks);
+                UpdateKnapsacks(floor, knapsacks);
             }
         }
     }
@@ -150,6 +163,7 @@ bool NeighbourhoodOrganize(Knapsack& floor, std::vector<Knapsack>& knapsacks, in
     if (!localMax)
     {
         knapsacks[currentKnapsack].Rotate(bestI, knapsacks[bestJ].inventory[bestK]);
+        UpdateKnapsacks(floor, knapsacks);
         currentKnapsack = bestJ;
         return false;
     }
@@ -160,11 +174,40 @@ bool NeighbourhoodOrganize(Knapsack& floor, std::vector<Knapsack>& knapsacks, in
     
 }
 
-void NeighbourhoodAdd(Knapsack& floor, std::vector<Knapsack>& knapsacks)
+bool NeighbourhoodAdd(Knapsack& floor, std::vector<Knapsack>& knapsacks, int& currentKnapsack)
 {
+    float currentEval = Evaluate(knapsacks) + Value(knapsacks);
+    bool localMax = true;
+    int bestI = 0;
+    int bestJ = 0;
     for (int i = 0; i < floor.inventory.size(); i++)
     {
-
+        for (int j = 0; j < knapsacks.size(); j++)
+        {
+            knapsacks[j].Add(floor.inventory[i]);
+            UpdateKnapsacks(floor, knapsacks);
+            if (Evaluate(knapsacks) + Value(knapsacks) > currentEval && Valid(knapsacks))
+            {
+                localMax = false;
+                currentEval = Evaluate(knapsacks) + Value(knapsacks);
+                bestI = i;
+                bestJ = j;
+            }
+            knapsacks[j].Remove(knapsacks[j].inventory.size() - 1);
+            UpdateKnapsacks(floor, knapsacks);
+        }
+    }
+    
+    if (!localMax)
+    {
+        knapsacks[bestJ].Add(floor.inventory[bestI]);
+        UpdateKnapsacks(floor, knapsacks);
+        currentKnapsack = bestJ;
+        return false;
+    }
+    else
+    {
+        return true;
     }
 }
 
@@ -177,6 +220,7 @@ int main()
     InitializeKnapsacks(knapsacks, 10, 15, 20);
     InitializeFloor(floor, 20, 15, 15);
     GreedySolution(floor, knapsacks);
+    floor.Add(CreateItem(1, 2));
     Print(floor, knapsacks);
 
     //Step 1-3
@@ -185,7 +229,13 @@ int main()
     int currentKnapsack = 0;
     for (int i = 0; i < t; i++)
     {
-        if (NeighbourhoodOrganize(floor, knapsacks, currentKnapsack)) break;
+        if (NeighbourhoodOrganize(floor, knapsacks, currentKnapsack))
+        {
+            if (NeighbourhoodAdd(floor, knapsacks, currentKnapsack))
+            {
+                break;
+            }
+        }
     }
     Print(floor, knapsacks);
 }

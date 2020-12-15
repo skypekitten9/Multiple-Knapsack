@@ -12,5 +12,6 @@ public:
 	void Add(Item item);
 	void Rotate(int index, Item& item);
 	void Print();
+	void Update();
 };
 
